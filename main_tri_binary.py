@@ -39,12 +39,11 @@ def set_random_seed(seed):
         torch.cuda.manual_seed_all(seed)
 
 
-parser = argparse.ArgumentParser(description='Link Prediction with Walk-Pooling')
+parser = argparse.ArgumentParser(description='Binary Triplet classification with TriMoGCL')
 # Dataset
 parser.add_argument('--data-name', default='ms', help='graph name')
 parser.add_argument('--task', default='binary', help='graph name')
 
-# training/validation/test divison and ratio
 parser.add_argument('--input_dir', type=str, default='../data/')
 parser.add_argument('--res_dir', type=str, default='24-7-4-binary all')
 
@@ -52,20 +51,12 @@ parser.add_argument('--dise_feat_dir', type=str, default='../data/drkg/dise_feat
 parser.add_argument('--drug_feat_dir', type=str, default='../data/drkg/drug_feats.pth')
 parser.add_argument('--gene_feat_dir', type=str, default='../data/drkg/gene_feats.pth')
 
-parser.add_argument('--observe-val-and-injection', type=str2bool, default=False,
-                    help='whether to contain the validation set in the observed graph and apply injection trick')
-
-parser.add_argument('--test-ratio', type=float, default=0.1,
-                    help='0.1 ratio of test links')
-parser.add_argument('--val-ratio', type=float, default=0.1,
-                    help='ratio of validation links. If using the splitted data from SEAL,\
-                     it is the ratio on the observed links, othewise, it is the ratio on the whole links.')
+parser.add_argument('--test-ratio', type=float, default=0.1, help='ratio of test triplets')
+parser.add_argument('--val-ratio', type=float, default=0.1, help='ratio of validation triplets')
 
 # Model and Training
-parser.add_argument('--seed', type=int, default=1,
-                    help='random seed (default: 1)')
-parser.add_argument('--lr', type=float, default=0.0001,
-                    help='0.001:200, 00005:32, learning rate')
+parser.add_argument('--seed', type=int, default=1, help='random seed (default: 1)')
+parser.add_argument('--lr', type=float, default=0.0001, help='learning rate')
 parser.add_argument('--weight-decay', type=float, default=0)
 parser.add_argument('--hidden-channels', type=int, default=256)
 parser.add_argument('--batch-size', type=int, default=5000)

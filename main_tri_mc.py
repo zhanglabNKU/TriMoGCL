@@ -40,49 +40,21 @@ def set_random_seed(seed):
         torch.cuda.manual_seed_all(seed)
 
 
-parser = argparse.ArgumentParser(description='Link Prediction with Walk-Pooling')
+parser = argparse.ArgumentParser(description='Multi-class Triplet classification with TriMoGCL')
 # Dataset
 parser.add_argument('--data-name', default='drkg', help='graph name')
 parser.add_argument('--task', default='multi-class', help='graph name')
 parser.add_argument('--graph_formula', default='graph', help='graph name')
 
-
-# training/validation/test divison and ratio
 parser.add_argument('--input_dir', type=str, default='../data/')
 parser.add_argument('--res_dir', type=str, default='analysis')
-# parser.add_argument('--drug_dise_dir', type=str, default='../data/drkg/Compound-Disease-insert-feat.npy')
-# parser.add_argument('--gene_dise_dir', type=str, default='../data/drkg/Gene-Disease-insert-feat.npy')
-# parser.add_argument('--gene_drug_dir', type=str, default='../data/drkg/Gene-Compound-insert-feat.npy')
-#
-# parser.add_argument('--dise_feat_dir', type=str, default='../data/drkg/dise_feats.pth')
-# parser.add_argument('--drug_feat_dir', type=str, default='../data/drkg/drug_feats.pth')
-# parser.add_argument('--gene_feat_dir', type=str, default='../data/drkg/gene_feats.pth')
-#
-# parser.add_argument('--cycles', type=str, default='../data/drkg/cycles.npy')
-# parser.add_argument('--tuples_cenofdise', type=str, default='../data/drkg/tuples_cenofdise.npy')
-# parser.add_argument('--tuples_cenofdrug', type=str, default='../data/drkg/tuples_cenofdrug.npy')
-# parser.add_argument('--tuples_cenofgene', type=str, default='../data/drkg/tuples_cenofgene.npy')
-# parser.add_argument('--single_drdi', type=str, default='../data/drkg/single_drug_dise.npy')
-# parser.add_argument('--single_gedi', type=str, default='../data/drkg/single_gene_dise.npy')
-# parser.add_argument('--single_gedr', type=str, default='../data/drkg/single_gene_drug.npy')
 
-parser.add_argument('--observe-val-and-injection', type=str2bool, default=False,
-                    help='whether to contain the validation set in the observed graph and apply injection trick')
+parser.add_argument('--test-ratio', type=float, default=0.1, help='ratio of test triplets')
+parser.add_argument('--val-ratio', type=float, default=0.1, help='ratio of validation triplets')
 
-parser.add_argument('--test-ratio', type=float, default=0.1,
-                    help='0.1 ratio of test links')
-parser.add_argument('--val-ratio', type=float, default=0.1,
-                    help='ratio of validation links. If using the splitted data from SEAL,\
-                     it is the ratio on the observed links, othewise, it is the ratio on the whole links.')
-# Model and Training
-parser.add_argument('--seed', type=int, default=1,
-                    help='random seed (default: 1)')
-parser.add_argument('--lr', type=float, default=0.0005,
-                    help='0.001:200, 00005:32, learning rate')
+parser.add_argument('--seed', type=int, default=1, help='random seed (default: 1)')
+parser.add_argument('--lr', type=float, default=0.0005, help='learning rate')
 parser.add_argument('--weight-decay', type=float, default=0)
-# parser.add_argument('--walk-len', type=int, default=7, help='cutoff in the length of walks')
-# parser.add_argument('--heads', type=int, default=2,
-#                     help='using multi-heads in the attention link weight encoder ')
 parser.add_argument('--hidden-channels', type=int, default=256)
 parser.add_argument('--batch-size', type=int, default=5000)
 parser.add_argument('--batch_num', type=int, default=10)
@@ -90,13 +62,6 @@ parser.add_argument('--epoch-num', type=int, default=150)
 parser.add_argument('--tau', type=float, default=1000)
 parser.add_argument('--lam1', type=float, default=0.1)
 parser.add_argument('--lam2', type=float, default=0.1)
-# parser.add_argument('--hitk', type=int, default=50)
-parser.add_argument('--log', type=str, default=None,
-                    help='log by tensorboard, default is None')
-parser.add_argument('--gnn_conv', type=str, default='sign',
-                    help='The convolution method in GNN')
-parser.add_argument('--pooling', type=str, default='concat',
-                    help='The pooling method to integrate three node features.')
 
 
 args = parser.parse_args()
@@ -113,7 +78,6 @@ if args.data_name == 'ms':
     args.gene_num = 4519
 
 print('<<Begin generating training data>>')
-# data = prepare_data(args)
 data = prepare_data(args)
 data = data.to(device)
 
@@ -123,17 +87,12 @@ lr = args.lr
 weight_decay = args.weight_decay
 
 torch.cuda.empty_cache()
-# print("Dimention of features after concatenation:", num_features)
 set_random_seed(args.seed)
 
 num_features = data.x.shape[1]
 hidden_channels = args.hidden_channels
 total_nodes = args.dise_num + args.drug_num + args.gene_num
 model = GCN(in_dim=num_features, h_dim=hidden_channels, out_dim=hidden_channels, number_nodes=total_nodes)
-# model = HygLinkPred(in_dim=num_features, h_dim=hidden_channels, out_dim=hidden_channels, number_nodes=total_nodes,
-#                     dise_node=args.dise_num, drug_node=args.drug_num,
-#                     gene_node=args.gene_num, conv_name='sign', hygs=, adj_2hop=None, adj_3hop=None)
-# model = MLP(in_dim=num_features, h_dim=hidden_channels, out_dim=hidden_channels)
 model.to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
 
@@ -215,7 +174,7 @@ def train(infeat, edge_index, train_label, pos_train_edge, edge_attr=None):
         feat_2channle = torch.cat((feat, input_feat), dim=1)
         feat_2channle_ = torch.cat((feat_, input_feat_), dim=1)
 
-        out = model.classifier(feat_2channle)  # feat: wo edge, feat_2channle: all
+        out = model.classifier(feat_2channle)
         out_ = model.classifier(feat_2channle_)
 
         loss = crsoftmax(out, label)
@@ -239,7 +198,7 @@ def roc_aupr_score(y_true, y_score, average="macro"):
         # return auc(recall, precision, reorder=True)
         return auc(recall, precision)
 
-    def _average_binary_score(binary_metric, y_true, y_score, average):  # y_true= y_one_hot
+    def _average_binary_score(binary_metric, y_true, y_score, average):
         if average == "binary":
             return binary_metric(y_true, y_score)
         if average == "micro":

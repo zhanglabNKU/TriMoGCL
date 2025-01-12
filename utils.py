@@ -56,13 +56,11 @@ def negative_sampling(pos_list, pos_idx, drug_dise_adj, gene_dise_adj, gene_drug
         for i in range(1, len(pos_list)):
             neg_n += len(pos_list[i])
             neg_cand.append(pos_list[i])
-        # neg_idx = torch.randint(0, neg_n, (len(pos_list[0]), ))
 
     elif pos_idx == (len(pos_list) - 1):
         for i in range(0, len(pos_list) - 1):
             neg_n += len(pos_list[i])
             neg_cand.append(pos_list[i])
-        # neg_idx = torch.randint(0, neg_n, (len(pos_list[pos_idx]), ))
 
     else:
         for i in range(0, pos_idx):
@@ -71,12 +69,8 @@ def negative_sampling(pos_list, pos_idx, drug_dise_adj, gene_dise_adj, gene_drug
         for i in range(pos_idx + 1, len(pos_list)):
             neg_n += len(pos_list[i])
             neg_cand.append(pos_list[i])
-        # neg_idx = torch.randint(0, neg_n, (len(pos_list[pos_idx]), ))
     if len(pos_list[pos_idx]) <= neg_n:
         neg_idx = np.random.choice(neg_n, len(pos_list[pos_idx]), replace=False)
-        # neg_idx = torch.from_numpy(neg_idx)
-        # neg_idx = torch.unique(neg_idx)
-        # neg_sam = torch.from_numpy(np.concatenate(neg_cand, axis=0))[neg_idx].long()
         neg_sam = np.concatenate(neg_cand, axis=0)[neg_idx]
     else:
         neg_sam = np.concatenate(neg_cand, axis=0)
@@ -209,8 +203,6 @@ def get_binary_dataset(args, cycles, tuples, single):
         train_attr.append(edge_attr)
 
     for i in [(0, (0, 1), 0), (1, (0, 2), 1), (2, (1, 2), 2)]:
-        # train_graph.append(single_list[i[0]]['train'])
-        # train_attr.append(torch.zeros(len(train_graph[-1][0]), dtype=torch.long) + i)
         egdes, edge_attr = collect_train_graph('single', single_list[i[0]], 'train', i)
         train_graph.append(egdes)
         train_attr.append(edge_attr)
@@ -277,8 +269,6 @@ def split_motif_mc(args, cycles, tuples, single):
     test_lab = []
     train_graph = []
     train_attr = []
-    # valid_attr = []
-    # test_attr = []
     cycles_list = split_trvate(args, cycles, cycles.shape[0])
     train_pos.append(cycles_list['train'])
     train_lab += len(cycles_list['train']) * [0]
@@ -345,7 +335,6 @@ def split_motif_mc(args, cycles, tuples, single):
         dise_feat = torch.cat((dise_feat, torch.zeros(args.dise_num, drug_feat_dim - dise_feat_dim)), dim=1)
         gene_feat = torch.cat((gene_feat, torch.zeros(args.gene_num, drug_feat_dim - gene_feat_dim)), dim=1)
     data.x = torch.cat((dise_feat, drug_feat, gene_feat), dim=0)
-    # data.x = torch.rand(data.num_nodes, 512)
     data.train_graph = train_graph
     data.edge_index = train_graph
     data.di_train_graph = di_train_graph
@@ -363,15 +352,6 @@ def split_motif_mc(args, cycles, tuples, single):
 
 
 def prepare_data(args):
-    '''
-    1. global graph
-    2. train, valid, test
-
-    '''
-    # load data from .mat or download from Planetoid dataset.
-    # train_graphs = torch.load('../data/drkg/train_tri_hie.pth')
-    # val_graphs = torch.load('../data/drkg/val_tri_hie.pth')
-    # test_graphs = torch.load('../data/drkg/test_tri_hie.pth')
     set_random_seed(args.seed)
     cliques, drug_tuples, dise_tuples, gene_tuples, single_drdi, single_gedi, single_gedr = random_split(args)
     tuples = [dise_tuples, drug_tuples, gene_tuples]  # (3, N, 3)
