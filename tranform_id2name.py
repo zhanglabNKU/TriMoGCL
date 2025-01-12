@@ -22,17 +22,15 @@ if args.data_name == 'drkg':
     id2dise = np.load(args.input_dir + 'id2dise-feat-hierarchy.npy', allow_pickle=True).item()
     id2drug = np.load(args.input_dir + 'id2drug-feat-hierarchy.npy', allow_pickle=True).item()
     id2gene = np.load(args.input_dir + 'id2gene-feat-hierarchy.npy', allow_pickle=True).item()
+    entity_dict = np.load(args.input_dir + 'entity_dictionary.npy', allow_pickle=True).item()
+    entityid2name = {'Disease': {}, 'Gene': {}, 'Compound': {}}
+    entityid2name['Disease'] = dict(zip(entity_dict['Disease'].values(), entity_dict['Disease'].keys()))
+    entityid2name['Gene'] = dict(zip(entity_dict['Gene'].values(), entity_dict['Gene'].keys()))
+    entityid2name['Compound'] = dict(zip(entity_dict['Compound'].values(), entity_dict['Compound'].keys()))
 if args.data_name == 'ms':
     id2dise = np.load(args.input_dir + 'id2dise.npy', allow_pickle=True).item()
     id2drug = np.load(args.input_dir + 'id2drug.npy', allow_pickle=True).item()
     id2gene = np.load(args.input_dir + 'id2gene.npy', allow_pickle=True).item()
-
-entity_dict = np.load(args.input_dir + 'entity_dictionary.npy', allow_pickle=True).item()
-entityid2name = {'Disease': {}, 'Gene': {}, 'Compound': {}}
-entityid2name['Disease'] = dict(zip(entity_dict['Disease'].values(), entity_dict['Disease'].keys()))
-entityid2name['Gene'] = dict(zip(entity_dict['Gene'].values(), entity_dict['Gene'].keys()))
-entityid2name['Compound'] = dict(zip(entity_dict['Compound'].values(), entity_dict['Compound'].keys()))
-
 
 def write_tri(tri):
     '''
@@ -49,8 +47,8 @@ def write_tri(tri):
                 drug_name = entityid2name['Compound'][id2drug[y - args.dise_num]].split('::')[1]
                 gene_name = entityid2name['Gene'][id2gene[z - args.dise_num - args.drug_num]].split('::')[1]
             if args.data_name == 'ms':
-                dise_name = entityid2name['Disease'][id2dise[x]]
-                drug_name = entityid2name['Compound'][id2drug[y - args.dise_num]]
-                gene_name = entityid2name['Gene'][id2gene[z - args.dise_num - args.drug_num]]
+                dise_name = id2dise[x]
+                drug_name = id2drug[y - args.dise_num]
+                gene_name = id2gene[z - args.dise_num - args.drug_num]
             f.write(f'{dise_name}, {drug_name}, {gene_name}\n')
         f.close()
